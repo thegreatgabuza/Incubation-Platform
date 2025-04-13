@@ -1,12 +1,61 @@
-import type { IResourceItem } from "@refinedev/core";
+import { IResourceItem } from "@refinedev/core";
+import React from "react";
 
 import {
   DashboardOutlined,
-  ProjectOutlined,
   ShopOutlined,
+  SettingOutlined,
+  FormOutlined,
+  FundOutlined,
+  ApartmentOutlined
 } from "@ant-design/icons";
 
-export const resources: IResourceItem[] = [
+// Separate resources by role
+const adminResources: IResourceItem[] = [
+  {
+    name: "admin",
+    list: "/admin",
+    meta: {
+      label: "Admin Panel",
+      icon: <SettingOutlined />,
+    },
+  },
+  {
+    name: "forms",
+    list: "/admin/forms",
+    show: "/forms/:formId",
+    meta: {
+      canDelete: true,
+      icon: <FormOutlined />,
+      label: "Forms & Templates",
+    },
+  },
+];
+
+const directorResources: IResourceItem[] = [
+  {
+    name: "director",
+    list: "/director",
+    meta: {
+      label: "Director Dashboard",
+      icon: <FundOutlined />,
+    },
+  },
+];
+
+const operationsResources: IResourceItem[] = [
+  {
+    name: "operations",
+    list: "/operations",
+    meta: {
+      label: "Operations Dashboard",
+      icon: <ApartmentOutlined />,
+    },
+  },
+];
+
+// Common resources for all roles
+const commonResources: IResourceItem[] = [
   {
     name: "dashboard",
     list: "/",
@@ -26,4 +75,14 @@ export const resources: IResourceItem[] = [
       icon: <ShopOutlined />,
     },
   },
+];
+
+// Export combined resources
+// In a real implementation, you would filter these based on user role
+// This will be filtered by the layout component
+export const resources: IResourceItem[] = [
+  ...commonResources,
+  ...adminResources,
+  ...directorResources,
+  ...operationsResources,
 ];

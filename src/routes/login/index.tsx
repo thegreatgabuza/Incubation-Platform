@@ -12,7 +12,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
-import { auth } from "@/firebase";
+import { auth, db } from "@/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 const { Title } = Typography;
 
@@ -30,13 +31,34 @@ export const LoginPage: React.FC = () => {
   const handleLogin = async (values: any) => {
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // Fetch user role from Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      let redirectPath = "/dashboard";
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const role = userData.role;
+
+        // Redirect based on role
+        if (role === 'Admin') {
+          redirectPath = "/admin";
+        } else if (role === 'Director') {
+          redirectPath = "/director";
+        } else if (role === 'Operations') {
+          redirectPath = "/dashboard"; // Operations dashboard
+        } else if (role === 'Incubatee' || role === 'Funder' || role === 'Consultant') {
+          redirectPath = "/"; // Default dashboard
+        }
+      }
 
       message.success("🎉 Login successful! Redirecting...", 2);
       setRedirecting(true);
 
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate(redirectPath);
       }, 2000);
     } catch (error: any) {
       console.error(error);
@@ -50,13 +72,34 @@ export const LoginPage: React.FC = () => {
     try {
       setGoogleLoading(true);
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Fetch user role from Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      let redirectPath = "/";
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const role = userData.role;
+
+        // Redirect based on role
+        if (role === 'Admin') {
+          redirectPath = "/admin";
+        } else if (role === 'Director') {
+          redirectPath = "/director";
+        } else if (role === 'Operations') {
+          redirectPath = "/dashboard"; // Operations dashboard
+        } else if (role === 'Incubatee' || role === 'Funder' || role === 'Consultant') {
+          redirectPath = "/"; // Default dashboard
+        }
+      }
 
       message.success("✅ Google login successful! Redirecting...", 2);
       setRedirecting(true);
 
       setTimeout(() => {
-        navigate("/");
+        navigate(redirectPath);
       }, 2000);
     } catch (error: any) {
       console.error(error);
@@ -172,7 +215,7 @@ export const LoginPage: React.FC = () => {
           </Form>
 
           <div style={{ marginTop: 24, textAlign: "center" }}>
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <a
               onClick={() => navigate("/register")}
               style={{ fontWeight: 500 }}

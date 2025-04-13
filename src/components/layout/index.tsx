@@ -1,7 +1,5 @@
 import React from "react";
-
 import { ThemedLayoutV2, ThemedTitleV2 } from "@refinedev/antd";
-
 import { Header } from "./header";
 
 export const Layout = ({ children }: React.PropsWithChildren) => {
