@@ -12,6 +12,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { auth } from "@/firebase";
 
 const { Title } = Typography;
@@ -27,24 +28,38 @@ export const LoginPage: React.FC = () => {
     document.title = "Login • Incubation Platform";
   }, []);
 
-  const handleLogin = async (values: any) => {
-    try {
-      setLoading(true);
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+  
 
-      message.success("🎉 Login successful! Redirecting...", 2);
-      setRedirecting(true);
+const handleLogin = async (values: any) => {
+  try {
+    setLoading(true);
+    const userCred = await signInWithEmailAndPassword(auth, values.email, values.password);
+    const user = userCred.user;
 
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 2000);
-    } catch (error: any) {
-      console.error(error);
-      message.error("Invalid email or password.");
-    } finally {
-      setLoading(false);
+    const docRef = doc(db, "users", user.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      message.error("User record not found in database.");
+      return;
     }
-  };
+
+    const role = docSnap.data().role;
+
+    message.success("🎉 Login successful! Redirecting...", 2);
+    setRedirecting(true);
+
+    setTimeout(() => {
+      navigate(`/${role}`);
+    }, 2000);
+
+  } catch (error: any) {
+    console.error(error);
+    message.error("Invalid email or password.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleGoogleLogin = async () => {
     try {
