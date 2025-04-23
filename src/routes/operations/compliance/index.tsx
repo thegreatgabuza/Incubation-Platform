@@ -31,53 +31,21 @@ import {
   FileTextOutlined,
   PlusOutlined,
   DownloadOutlined,
+  FileAddOutlined,
+  FileProtectOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import moment from 'dayjs';
 import type { UploadProps } from 'antd';
 import type { ColumnType } from 'antd/es/table';
 
+import { ComplianceDocument, documentTypes, documentStatuses } from './types';
+import EDAgreementModal from './EDAgreementModal';
+
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 const { Option } = Select;
 const { TextArea } = Input;
-
-// Define document types
-const documentTypes = [
-  { value: 'beeCertificate', label: 'BEE Certificate' },
-  { value: 'taxClearance', label: 'Tax Clearance Certificate' },
-  { value: 'letterOfGoodStanding', label: 'Letter of Good Standing' },
-  { value: 'uifCompliance', label: 'UIF Compliance Certificate' },
-  { value: 'directorIdCopies', label: 'Certified ID Copies of Directors' },
-  { value: 'industryLicense', label: 'Industry-specific License/Permit' },
-];
-
-// Define document status options
-const documentStatuses = [
-  { value: 'valid', label: 'Valid', color: 'green' },
-  { value: 'expiring', label: 'Expiring Soon', color: 'orange' },
-  { value: 'expired', label: 'Expired', color: 'red' },
-  { value: 'missing', label: 'Missing', color: 'volcano' },
-  { value: 'pending', label: 'Pending Review', color: 'blue' },
-];
-
-// Define interface for compliance document
-interface ComplianceDocument {
-  id: string;
-  participantId: string;
-  participantName: string;
-  documentType: string;
-  documentName: string;
-  status: 'valid' | 'expiring' | 'expired' | 'missing' | 'pending';
-  issueDate: string;
-  expiryDate: string;
-  notes?: string;
-  fileUrl?: string;
-  uploadedBy: string;
-  uploadedAt: string;
-  lastVerifiedBy?: string;
-  lastVerifiedAt?: string;
-}
 
 // Mock data for participants
 const mockParticipants = [
@@ -93,7 +61,9 @@ const OperationsCompliance: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isEDAgreementModalVisible, setIsEDAgreementModalVisible] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<ComplianceDocument | null>(null);
+  const [selectedParticipant, setSelectedParticipant] = useState<any>(null);
   const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState('1');
   const navigate = useNavigate();
@@ -299,6 +269,18 @@ const OperationsCompliance: React.FC = () => {
     message.success('Document verified successfully');
   };
 
+  // Show ED Agreement modal for specific participant
+  const showEDAgreementModal = (participantId: string) => {
+    const participant = mockParticipants.find(p => p.id === participantId);
+    setSelectedParticipant(participant);
+    setIsEDAgreementModalVisible(true);
+  };
+
+  // Handle saving the new ED Agreement
+  const handleSaveEDAgreement = (document: ComplianceDocument) => {
+    setDocuments([...documents, document]);
+  };
+
   // Search functionality
   const filteredDocuments = searchText 
     ? documents.filter(doc =>
@@ -371,6 +353,7 @@ const OperationsCompliance: React.FC = () => {
               icon={<EyeOutlined />} 
               onClick={() => window.open(record.fileUrl, '_blank')} 
               type="text"
+              disabled={!record.fileUrl}
             />
           </Tooltip>
           {record.status === 'pending' && (
@@ -379,6 +362,15 @@ const OperationsCompliance: React.FC = () => {
                 type="text"
                 icon={<CheckCircleOutlined style={{ color: 'green' }} />}
                 onClick={() => handleVerifyDocument(record.id)}
+              />
+            </Tooltip>
+          )}
+          {record.documentType !== 'edAgreement' && (
+            <Tooltip title="Generate ED Agreement">
+              <Button
+                type="text"
+                icon={<FileProtectOutlined style={{ color: 'blue' }} />}
+                onClick={() => showEDAgreementModal(record.participantId)}
               />
             </Tooltip>
           )}
@@ -465,13 +457,21 @@ const OperationsCompliance: React.FC = () => {
             style={{ width: '300px' }}
             prefix={<SearchOutlined />}
           />
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => showModal()}
-          >
-            Add New Document
-          </Button>
+          <Space>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => showModal()}
+            >
+              Add New Document
+            </Button>
+            <Button
+              icon={<FileAddOutlined />}
+              onClick={() => setIsEDAgreementModalVisible(true)}
+            >
+              Generate ED Agreement
+            </Button>
+          </Space>
         </div>
         
         <Table
@@ -613,6 +613,14 @@ const OperationsCompliance: React.FC = () => {
           </div>
         </Form>
       </Modal>
+      
+      {/* ED Agreement Modal */}
+      <EDAgreementModal
+        visible={isEDAgreementModalVisible}
+        onCancel={() => setIsEDAgreementModalVisible(false)}
+        participant={selectedParticipant}
+        onSave={handleSaveEDAgreement}
+      />
     </div>
   );
 };
