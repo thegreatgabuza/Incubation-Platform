@@ -31,9 +31,20 @@ export const accessControlProvider: AccessControlProvider = {
       const userData = userDoc.data();
       const userRole = userData.role;
 
+      // Special case to control sidebar visibility for operations users
+      if (userRole === "Operations") {
+        // Operations users should only see operations resources in the sidebar
+        if (action === "list" && (resource === "dashboard" || resource === "companies")) {
+          return {
+            can: false,
+            reason: "Resource not available for Operations users",
+          };
+        }
+      }
+
       // Define access rules based on resources and roles
       if (resource === "dashboard" || resource === "companies") {
-        // Common resources - all authenticated users can access
+        // Common resources - all authenticated users can access except when restricted above
         return { can: true };
       }
 
@@ -55,6 +66,13 @@ export const accessControlProvider: AccessControlProvider = {
         return {
           can: false,
           reason: "You need Operations privileges to access this resource",
+        };
+      }
+
+      if (resource === "consultant" && userRole !== "Consultant") {
+        return {
+          can: false,
+          reason: "You need Consultant privileges to access this resource",
         };
       }
 

@@ -124,6 +124,11 @@ export const OperationsDashboard: React.FC = () => {
     navigate('/operations/participants');
   };
 
+  // Navigate to mentorship assignments
+  const goToMentorshipAssignments = () => {
+    navigate('/operations/mentorship-assignments');
+  };
+
   // Columns for form submissions table
   const formColumns = [
     {
@@ -316,6 +321,42 @@ export const OperationsDashboard: React.FC = () => {
               valueStyle={{ color: '#faad14' }}
               prefix={<ApartmentOutlined />}
             />
+          </Card>
+        </Col>
+      </Row>
+      
+      {/* Top Action Cards */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Card hoverable onClick={goToFormManagement}>
+            <Space direction="vertical" style={{ width: '100%', textAlign: 'center' }}>
+              <FormOutlined style={{ fontSize: 24, color: '#1890ff' }} />
+              <Text strong>Form Management</Text>
+            </Space>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Card hoverable onClick={goToResourceManagement}>
+            <Space direction="vertical" style={{ width: '100%', textAlign: 'center' }}>
+              <ApartmentOutlined style={{ fontSize: 24, color: '#52c41a' }} />
+              <Text strong>Resource Management</Text>
+            </Space>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Card hoverable onClick={goToParticipantManagement}>
+            <Space direction="vertical" style={{ width: '100%', textAlign: 'center' }}>
+              <TeamOutlined style={{ fontSize: 24, color: '#722ed1' }} />
+              <Text strong>Participant Management</Text>
+            </Space>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={6}>
+          <Card hoverable onClick={goToMentorshipAssignments}>
+            <Space direction="vertical" style={{ width: '100%', textAlign: 'center' }}>
+              <TeamOutlined style={{ fontSize: 24, color: '#fa8c16' }} />
+              <Text strong>Mentorship Assignments</Text>
+            </Space>
           </Card>
         </Col>
       </Row>
