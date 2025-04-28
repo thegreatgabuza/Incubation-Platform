@@ -7,6 +7,8 @@ import {
   User,
 } from "firebase/auth";
 import { auth } from "@/firebase"; // path to your firebase.ts
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebase";
 
 export const authProvider: AuthProvider = {
   login: async ({ email, password }) => {
@@ -55,6 +57,24 @@ export const authProvider: AuthProvider = {
   getIdentity: async () => {
     const user: User | null = auth.currentUser;
     if (user) {
+      // Fetch additional user data from Firestore
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          return {
+            id: user.uid,
+            name: userData.name || user.displayName || user.email || "Anonymous",
+            email: user.email,
+            avatar: user.photoURL ?? undefined,
+            role: userData.role, // Include the user's role
+          };
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+
+      // Fallback if Firestore fetch fails
       return {
         id: user.uid,
         name: user.displayName || user.email || "Anonymous",

@@ -29,7 +29,7 @@ export const functions = getFunctions(app);
 let analytics: ReturnType<typeof getAnalytics> | null = null;
 
 isSupported()
-  .then((supported) => {
+  .then((supported: boolean) => {
     if (supported) {
       analytics = getAnalytics(app);
     }

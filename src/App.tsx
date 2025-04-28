@@ -14,10 +14,24 @@ import { App as AntdApp, ConfigProvider } from "antd";
 
 import { Layout } from "@/components";
 import { resources } from "@/config/resources";
-import { authProvider, dataProvider, liveProvider } from "@/providers";
-import { DashboardPage, LoginPage, RegisterPage } from "@/routes";
+import { authProvider, dataProvider, liveProvider, accessControlProvider } from "@/providers";
+import { DashboardPage, LoginPage, RegisterPage, AdminDashboardPage } from "@/routes";
 
 import "@refinedev/antd/dist/reset.css";
+
+import FormManagement from "./routes/admin/forms/index";
+import FormSubmission from "./components/form-submission/FormSubmission";
+import { FormOutlined } from "@ant-design/icons";
+import { AdminRouteGuard, ConsultantRouteGuard, DirectorRouteGuard, OperationsRouteGuard } from "./components/guards";
+import { DirectorDashboardPage } from "./routes/director-dashboard";
+import { ConsultantDashboardPage } from "./routes/consultant-dashboard";
+import { OperationsDashboardPage } from "./routes/operations-dashboard";
+import OperationsFormsManagement from "./routes/operations/forms";
+import OperationsResourceManagement from "./routes/operations/resources";
+import OperationsParticipantsManagement from "./routes/operations/participants";
+import { ConsultantAssignment } from "./components/consultant-assignment";
+import OperationsCompliance from "./routes/operations/compliance";
+import OperationsReports from "./routes/operations/reports";
 
 const App = () => {
   return (
@@ -31,6 +45,7 @@ const App = () => {
               liveProvider={liveProvider}
               notificationProvider={useNotificationProvider}
               authProvider={authProvider}
+              accessControlProvider={accessControlProvider}
               resources={resources}
               options={{
                 syncWithLocation: true,
@@ -53,7 +68,49 @@ const App = () => {
                   }
                 >
                   <Route index element={<DashboardPage />} />
-
+                  
+                  {/* Admin routes with AdminRouteGuard */}
+                  <Route element={<AdminRouteGuard />}>
+                    <Route path='/admin' element={<AdminDashboardPage />} />
+                    <Route path="/admin/forms" element={<FormManagement />} />
+                  </Route>
+                  
+                  {/* Director routes with DirectorRouteGuard */}
+                  <Route element={<DirectorRouteGuard />}>
+                    <Route path='/director' element={<DirectorDashboardPage />} />
+                  </Route>
+                  
+                  {/* Consultant routes with ConsultantRouteGuard */}
+                  <Route element={<ConsultantRouteGuard />}>
+                    <Route path='/consultant' element={<ConsultantDashboardPage />} />
+                  </Route>
+                  
+                  {/* Operations routes with OperationsRouteGuard */}
+                  <Route element={<OperationsRouteGuard />}>
+                    {/* Main dashboard */}
+                    <Route path='/operations' element={<OperationsDashboardPage />} />
+                    
+                    {/* Forms management */}
+                    <Route path='/operations/forms' element={<OperationsFormsManagement />} />
+                    <Route path='/operations/forms/edit/:id' element={<OperationsFormsManagement />} />
+                    <Route path='/operations/forms/preview/:id' element={<OperationsFormsManagement />} />
+                    <Route path='/operations/form-responses/:id' element={<FormSubmission />} />
+                    
+                    {/* Resource and participant management */}
+                    <Route path='/operations/resources' element={<OperationsResourceManagement />} />
+                    <Route path='/operations/participants' element={<OperationsParticipantsManagement />} />
+                    
+                    {/* Compliance management */}
+                    <Route path='/operations/compliance' element={<OperationsCompliance />} />
+                    
+                    {/* Reports & Analytics */}
+                    <Route path='/operations/reports' element={<OperationsReports />} />
+                    
+                    {/* Mentorship management */}
+                    <Route path='/operations/mentorship-assignments' element={<ConsultantAssignment />} />
+                  </Route>
+                  
+                  <Route path="/forms/:formId" element={<FormSubmission />} />
                   <Route path='*' element={<ErrorComponent />} />
                 </Route>
 

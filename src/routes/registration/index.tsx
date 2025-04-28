@@ -205,6 +205,7 @@ export const RegisterPage: React.FC = () => {
               rules={[{ required: true, message: "Please select your role" }]}
             >
               <Select placeholder='Select your role'>
+                <Select.Option value='Director'>Director</Select.Option>
                 <Select.Option value='Admin'>Admin</Select.Option>
                 <Select.Option value='Operations'>Operations</Select.Option>
                 <Select.Option value='Incubatee'>Incubatee</Select.Option>

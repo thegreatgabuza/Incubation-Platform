@@ -12,8 +12,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
+import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { auth } from "@/firebase";
 
 const { Title } = Typography;
 
@@ -28,50 +28,80 @@ export const LoginPage: React.FC = () => {
     document.title = "Login • Incubation Platform";
   }, []);
 
-  
+  const handleLogin = async (values: any) => {
+    try {
+      setLoading(true);
+      const userCred = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCred.user;
 
-const handleLogin = async (values: any) => {
-  try {
-    setLoading(true);
-    const userCred = await signInWithEmailAndPassword(auth, values.email, values.password);
-    const user = userCred.user;
+      // Fetch user role from Firestore
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
 
-    const docRef = doc(db, "users", user.uid);
-    const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        message.error("User record not found in database.");
+        return;
+      }
 
-    if (!docSnap.exists()) {
-      message.error("User record not found in database.");
-      return;
+      const userData = docSnap.data();
+      const role = userData.role;
+      let redirectPath = `/${role.toLowerCase()}`;
+
+      // Handle specific role redirects
+      if (role === 'Admin') {
+        redirectPath = "/admin";
+      } else if (role === 'Director') {
+        redirectPath = "/director";
+      } else if (role === 'Operations') {
+        redirectPath = "/dashboard"; // Operations dashboard
+      }
+
+      message.success("🎉 Login successful! Redirecting...", 2);
+      setRedirecting(true);
+
+      setTimeout(() => {
+        navigate(redirectPath);
+      }, 2000);
+    } catch (error: any) {
+      console.error(error);
+      message.error("Invalid email or password.");
+    } finally {
+      setLoading(false);
     }
-
-    const role = docSnap.data().role;
-
-    message.success("🎉 Login successful! Redirecting...", 2);
-    setRedirecting(true);
-
-    setTimeout(() => {
-      navigate(`/${role}`);
-    }, 2000);
-
-  } catch (error: any) {
-    console.error(error);
-    message.error("Invalid email or password.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Fetch user role from Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      let redirectPath = "/";
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const role = userData.role;
+
+        // Redirect based on role
+        if (role === 'Admin') {
+          redirectPath = "/admin";
+        } else if (role === 'Director') {
+          redirectPath = "/director";
+        } else if (role === 'Operations') {
+          redirectPath = "/dashboard"; // Operations dashboard
+        } else if (role === 'Incubatee' || role === 'Funder' || role === 'Consultant') {
+          redirectPath = "/"; // Default dashboard
+        }
+      }
 
       message.success("✅ Google login successful! Redirecting...", 2);
       setRedirecting(true);
 
       setTimeout(() => {
-        navigate("/");
+        navigate(redirectPath);
       }, 2000);
     } catch (error: any) {
       console.error(error);
@@ -187,7 +217,7 @@ const handleLogin = async (values: any) => {
           </Form>
 
           <div style={{ marginTop: 24, textAlign: "center" }}>
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <a
               onClick={() => navigate("/register")}
               style={{ fontWeight: 500 }}
