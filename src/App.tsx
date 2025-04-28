@@ -1,4 +1,4 @@
-import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Outlet, Route, Routes, Navigate } from "react-router-dom";
 
 import { RefineThemes, useNotificationProvider } from "@refinedev/antd";
 import { Authenticated, ErrorComponent, Refine } from "@refinedev/core";
@@ -15,7 +15,15 @@ import { App as AntdApp, ConfigProvider } from "antd";
 import { Layout } from "@/components";
 import { resources } from "@/config/resources";
 import { authProvider, dataProvider, liveProvider, accessControlProvider } from "@/providers";
-import { DashboardPage, LoginPage, RegisterPage, AdminDashboardPage } from "@/routes";
+import { DashboardPage, LoginPage, RegisterPage, AdminDashboardPage, FunderLanding } from "@/routes";
+import { RoleLayout } from './routes/layout/RoleLayout';
+import FunderDashboard from './routes/funder/funderDashboard';
+import { FunderOpportunities } from './routes/funder/opportunities';
+import { FunderPortfolio } from './routes/funder/portfolio';
+import { FunderAnalytics } from './routes/funder/analytics';
+import { FunderDocuments } from './routes/funder/documents';
+import { FunderDueDiligence } from './routes/funder/due-diligence';
+import FunderCalendarPage from './routes/funder/calendar';
 
 import "@refinedev/antd/dist/reset.css";
 
@@ -55,6 +63,12 @@ const App = () => {
               }}
             >
               <Routes>
+                {/* Public Routes - this will be accessible to all users without authentication */}
+                <Route path="/" element={<FunderLanding />} />
+                <Route path='/register' element={<RegisterPage />} />
+                <Route path='/login' element={<LoginPage />} />
+                
+                {/* Authenticated Routes */}
                 <Route
                   element={
                     <Authenticated
@@ -67,7 +81,8 @@ const App = () => {
                     </Authenticated>
                   }
                 >
-                  <Route index element={<DashboardPage />} />
+                  {/* Remove the index route as we want the funder landing to be the main index */}
+                  <Route path='/dashboard' element={<DashboardPage />} />
                   
                   {/* Admin routes with AdminRouteGuard */}
                   <Route element={<AdminRouteGuard />}>
@@ -111,22 +126,26 @@ const App = () => {
                   </Route>
                   
                   <Route path="/forms/:formId" element={<FormSubmission />} />
+                  {/* Fallback for authenticated but invalid routes */}
                   <Route path='*' element={<ErrorComponent />} />
                 </Route>
 
+                {/* Funder Routes */}
                 <Route
-                  element={
-                    <Authenticated
-                      key='authenticated-auth'
-                      fallback={<Outlet />}
-                    >
-                      <NavigateToResource resource='dashboard' />
-                    </Authenticated>
-                  }
+                  path="/funder/*"
+                  element={<RoleLayout role="funder" />}
                 >
-                  <Route path='/login' element={<LoginPage />} />
+                  <Route index element={<FunderDashboard />} />
+                  <Route path="opportunities" element={<FunderOpportunities />} />
+                  <Route path="portfolio" element={<FunderPortfolio />} />
+                  <Route path="due-diligence" element={<FunderDueDiligence />} />
+                  <Route path="analytics" element={<FunderAnalytics />} />
+                  <Route path="documents" element={<FunderDocuments />} />
+                  <Route path="calendar" element={<FunderCalendarPage />} />
                 </Route>
-                <Route path='/register' element={<RegisterPage />} />
+
+                {/* Fallback for all other routes - direct to funder landing */}
+                <Route path='*' element={<FunderLanding />} />
               </Routes>
               <UnsavedChangesNotifier />
               <DocumentTitleHandler />

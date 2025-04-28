@@ -1,8 +1,13 @@
 // App.tsx
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
-import { RoleLayout } from './layouts/RoleLayout';
+import { RoleLayout } from './layout/RoleLayout';
 import { Login } from './pages/public/Login';
 import { useAuth } from './hooks/useAuth';
+import FunderDashboard from './funder/funderDashboard';
+import { FunderOpportunities } from './funder/opportunities';
+import { FunderPortfolio } from './funder/portfolio';
+import { FunderAnalytics } from './funder/analytics';
+import { FunderDocuments } from './funder/documents';
 
 const App = () => {
   const { role } = useAuth(); // Custom auth hook (e.g., Redux/Context)
@@ -19,8 +24,10 @@ const App = () => {
           element={role === 'funder' ? <RoleLayout role="funder" /> : <Navigate to="/login" />}
         >
           <Route index element={<FunderDashboard />} />
-          <Route path="approvals" element={<Approvals />} />
-          <Route path="budget" element={<Budget />} />
+          <Route path="opportunities" element={<FunderOpportunities />} />
+          <Route path="portfolio" element={<FunderPortfolio />} />
+          <Route path="analytics" element={<FunderAnalytics />} />
+          <Route path="documents" element={<FunderDocuments />} />
         </Route>
         
 
@@ -42,6 +49,18 @@ const App = () => {
           <Route index element={<ConsultantDashboard />} />
           <Route path="feedback" element={<Feedback />} />
           <Route path="analytics" element={<Analytics />} />
+        </Route>
+
+        {/* Operations Routes */}
+        <Route
+          path="/operations/*"
+          element={role === 'operations' ? <RoleLayout role="operations" /> : <Navigate to="/login" />}
+        >
+          <Route index element={<OperationsDashboard />} />
+          <Route path="participants" element={<OperationsParticipantsManagement />} />
+          <Route path="approvals" element={<OperationsApprovals />} />
+          <Route path="reports" element={<OperationsReports />} />
+          <Route path="resources" element={<OperationsResources />} />
         </Route>
 
         {/* Fallback */}

@@ -5,3 +5,4 @@ export * from "./registration";
 export * from "./admin-dashboard";
 export * from "./director-dashboard";
 export * from "./operations-dashboard";
+export * from "./public/FunderLanding";
