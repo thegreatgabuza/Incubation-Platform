@@ -15,7 +15,7 @@ import { App as AntdApp, ConfigProvider } from "antd";
 import { Layout } from "@/components";
 import { resources } from "@/config/resources";
 import { authProvider, dataProvider, liveProvider, accessControlProvider } from "@/providers";
-import { DashboardPage, LoginPage, RegisterPage, AdminDashboardPage } from "@/routes";
+import { DashboardPage, LoginPage, RegisterPage, AdminDashboardPage, FunderLanding } from "@/routes";
 
 import "@refinedev/antd/dist/reset.css";
 
@@ -55,6 +55,9 @@ const App = () => {
               }}
             >
               <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<FunderLanding />} />
+                
                 <Route
                   element={
                     <Authenticated
