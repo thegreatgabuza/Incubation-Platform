@@ -1,4 +1,4 @@
-import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Outlet, Route, Routes, Navigate } from "react-router-dom";
 
 import { RefineThemes, useNotificationProvider } from "@refinedev/antd";
 import { Authenticated, ErrorComponent, Refine } from "@refinedev/core";
@@ -16,6 +16,14 @@ import { Layout } from "@/components";
 import { resources } from "@/config/resources";
 import { authProvider, dataProvider, liveProvider, accessControlProvider } from "@/providers";
 import { DashboardPage, LoginPage, RegisterPage, AdminDashboardPage, FunderLanding } from "@/routes";
+import { RoleLayout } from './routes/layout/RoleLayout';
+import FunderDashboard from './routes/funder/funderDashboard';
+import { FunderOpportunities } from './routes/funder/opportunities';
+import { FunderPortfolio } from './routes/funder/portfolio';
+import { FunderAnalytics } from './routes/funder/analytics';
+import { FunderDocuments } from './routes/funder/documents';
+import { FunderDueDiligence } from './routes/funder/due-diligence';
+import FunderCalendarPage from './routes/funder/calendar';
 
 import "@refinedev/antd/dist/reset.css";
 
@@ -120,6 +128,20 @@ const App = () => {
                   <Route path="/forms/:formId" element={<FormSubmission />} />
                   {/* Fallback for authenticated but invalid routes */}
                   <Route path='*' element={<ErrorComponent />} />
+                </Route>
+
+                {/* Funder Routes */}
+                <Route
+                  path="/funder/*"
+                  element={<RoleLayout role="funder" />}
+                >
+                  <Route index element={<FunderDashboard />} />
+                  <Route path="opportunities" element={<FunderOpportunities />} />
+                  <Route path="portfolio" element={<FunderPortfolio />} />
+                  <Route path="due-diligence" element={<FunderDueDiligence />} />
+                  <Route path="analytics" element={<FunderAnalytics />} />
+                  <Route path="documents" element={<FunderDocuments />} />
+                  <Route path="calendar" element={<FunderCalendarPage />} />
                 </Route>
 
                 {/* Fallback for all other routes - direct to funder landing */}

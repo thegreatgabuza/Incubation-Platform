@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { 
   Layout, 
   Typography, 
@@ -13,7 +13,9 @@ import {
   Tabs,
   Badge,
   Progress,
-  Avatar
+  Avatar,
+  Spin,
+  Alert
 } from 'antd';
 import { 
   FireOutlined, 
@@ -23,10 +25,11 @@ import {
   DollarOutlined,
   UserOutlined,
   BuildOutlined,
-  ArrowRightOutlined
+  ArrowRightOutlined,
+  WarningOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where, limit, QuerySnapshot, DocumentData } from "firebase/firestore";
 import { db } from "@/firebase";
 
 const { Header, Content, Footer } = Layout;
@@ -34,99 +37,89 @@ const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 const { Meta } = Card;
 
-// Mock data for investment opportunities
-const investmentOpportunities = [
-  {
-    id: 1,
-    name: 'TechFarm Innovations',
-    logo: '/assets/images/company-logos/techfarm.png',
-    category: 'AgriTech',
-    location: 'Cape Town, SA',
-    description: 'Revolutionizing farming with IoT sensors and data analytics for sustainable agriculture',
-    fundingGoal: 750000,
-    fundingRaised: 425000,
-    progress: 56,
-    daysLeft: 15,
-    status: 'trending',
-    founderInfo: 'Led by agricultural engineer John Mbeki with 15 years experience',
-    registrationType: 'Capital R • Reg S'
-  },
-  {
-    id: 2,
-    name: 'HealthPlus Solutions',
-    logo: '/assets/images/company-logos/healthplus.png',
-    category: 'HealthTech',
-    location: 'Johannesburg, SA',
-    description: 'AI-powered diagnostic tools for rural healthcare facilities',
-    fundingGoal: 500000,
-    fundingRaised: 350000,
-    progress: 70,
-    daysLeft: 21,
-    status: 'featured',
-    founderInfo: 'Founded by Dr. Sarah Ngwenya, former Head of Telemedicine at Joburg General',
-    registrationType: 'Republic Funding Portal • Reg CF'
-  },
-  {
-    id: 3,
-    name: 'EduConnect',
-    logo: '/assets/images/company-logos/educonnect.png',
-    category: 'EdTech',
-    location: 'Durban, SA',
-    description: 'Digital platform connecting students with tutors and educational resources',
-    fundingGoal: 300000,
-    fundingRaised: 300000,
-    progress: 100,
-    daysLeft: 0,
-    status: 'closed',
-    founderInfo: 'Created by former university professor and education advocate Thabo Molefi',
-    registrationType: 'Capital R • 1940 Act Registered Fund'
-  },
-  {
-    id: 4,
-    name: 'Renewable Energy Solutions',
-    logo: '/assets/images/company-logos/renewable.png',
-    category: 'CleanTech',
-    location: 'Pretoria, SA',
-    description: 'Affordable solar solutions for residential and commercial properties',
-    fundingGoal: 1200000,
-    fundingRaised: 750000,
-    progress: 62,
-    daysLeft: 12,
-    status: 'trending',
-    founderInfo: 'Team of engineers with background in sustainable energy development',
-    registrationType: 'Republic Funding Portal • Reg CF'
-  },
-  {
-    id: 5,
-    name: 'FinSmart Africa',
-    logo: '/assets/images/company-logos/finsmart.png',
-    category: 'FinTech',
-    location: 'Cape Town, SA',
-    description: 'Mobile banking solutions for underserved communities across Africa',
-    fundingGoal: 600000,
-    fundingRaised: 420000,
-    progress: 70,
-    daysLeft: 18,
-    status: 'trending',
-    founderInfo: 'Founded by banking veterans with 20+ years experience in financial inclusion',
-    registrationType: 'Capital R • Reg S'
-  },
-  {
-    id: 6,
-    name: 'Urban Logistics',
-    logo: '/assets/images/company-logos/urbanlogistics.png',
-    category: 'Logistics',
-    location: 'Johannesburg, SA',
-    description: 'Last-mile delivery optimization for urban centers using electric vehicles',
-    fundingGoal: 450000,
-    fundingRaised: 225000,
-    progress: 50,
-    daysLeft: 30,
-    status: 'featured',
-    founderInfo: 'Team with background in logistics, sustainability, and urban planning',
-    registrationType: 'Republic Funding Portal • Reg CF'
+// Error boundary class for catching rendering errors
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false, error: null };
   }
-];
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Landing page error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+          <Alert
+            message="Something went wrong"
+            description={
+              <div>
+                <p>We encountered an issue loading the investment opportunities.</p>
+                <p>Please try refreshing the page or contact support if the problem persists.</p>
+                <p style={{ fontSize: '12px', marginTop: '20px' }}>
+                  Error details: {this.state.error?.message || "Unknown error"}
+                </p>
+                <Button 
+                  type="primary" 
+                  onClick={() => window.location.reload()} 
+                  style={{ marginTop: '20px' }}
+                >
+                  Refresh Page
+                </Button>
+              </div>
+            }
+            type="error"
+            showIcon
+            icon={<WarningOutlined />}
+          />
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Loader component to show while suspending
+const PageLoader = () => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '100vh',
+    flexDirection: 'column' 
+  }}>
+    <Spin size="large" />
+    <div style={{ marginTop: 20 }}>Loading the platform...</div>
+  </div>
+);
+
+// Define an opportunity interface for type safety
+interface Opportunity {
+  id: string;
+  name: string;
+  logo?: string;
+  category?: string;
+  industry?: string;
+  location?: string;
+  description?: string;
+  fundingGoal?: number;
+  fundingRaised?: number;
+  progress?: number;
+  daysLeft?: number;
+  status?: string;
+  founderInfo?: string;
+  registrationType?: string;
+  stage?: string;
+  team?: number;
+  [key: string]: any; // For any additional fields from Firebase
+}
 
 // Platform statistics
 const platformStats = [
@@ -153,41 +146,39 @@ const platformStats = [
 ];
 
 // Function to format currency
-const formatCurrency = (amount: number) => {
-  return `R${amount.toLocaleString('en-ZA')}`;
+const formatCurrency = (amount: number | undefined | null) => {
+  // Safety check for undefined or null values
+  if (amount === undefined || amount === null) {
+    return 'R0';
+  }
+  
+  // Make sure amount is a number
+  const numericAmount = typeof amount === 'number' ? amount : parseFloat(String(amount));
+  
+  // Handle NaN case
+  if (isNaN(numericAmount)) {
+    return 'R0';
+  }
+  
+  try {
+    return `R${numericAmount.toLocaleString('en-ZA')}`;
+  } catch (error) {
+    console.error('Error formatting currency:', error);
+    return `R${numericAmount}`;
+  }
 };
 
-export const FunderLanding: React.FC = () => {
+// Props interface for the content component
+interface FunderLandingContentProps {
+  data: Opportunity[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+// This is the main content separated from data fetching logic
+const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoading, error }) => {
   const navigate = useNavigate();
-  const [participants, setParticipants] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    document.title = "Investment Opportunities • Incubation Platform";
-    
-    // Fetch actual participants from Firestore if available
-    const fetchParticipants = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "participants"));
-        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        if (data.length > 0) {
-          setParticipants(data);
-        } else {
-          // Use mock data if no participants found
-          setParticipants(investmentOpportunities);
-        }
-      } catch (error) {
-        console.error("Error fetching participants:", error);
-        // Fallback to mock data
-        setParticipants(investmentOpportunities);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchParticipants();
-  }, []);
-
+  
   const handleRegisterClick = () => {
     navigate('/register');
   };
@@ -199,11 +190,14 @@ export const FunderLanding: React.FC = () => {
   const renderStatusTag = (status: string) => {
     switch (status) {
       case 'trending':
-        return <Badge.Ribbon text={<><FireOutlined /> TRENDING</>} color="red" />;
+      case 'active':
+        return <Badge.Ribbon text={<><FireOutlined /> ACTIVE</>} color="red" />;
       case 'featured':
-        return <Badge.Ribbon text="SPOTLIGHT" />;
+      case 'warning':
+        return <Badge.Ribbon text="AT RISK" />;
       case 'closed':
-        return <Badge.Ribbon text={<><CheckCircleOutlined /> FUNDED</>} color="green" />;
+      case 'inactive':
+        return <Badge.Ribbon text={<><CheckCircleOutlined /> INACTIVE</>} color="green" />;
       default:
         return null;
     }
@@ -223,11 +217,10 @@ export const FunderLanding: React.FC = () => {
         background: '#fff'
       }}>
         <div className="logo" style={{ display: 'flex', alignItems: 'center' }}>
-          <img 
-            src="/assets/images/QuantilytixO.png" 
-            alt="Quantilytix Logo" 
-            style={{ height: 32, marginRight: 8 }}
-          />
+          <Avatar 
+            size={32} 
+            style={{ backgroundColor: '#1890ff', marginRight: 8 }}
+          >Q</Avatar>
           <Title level={4} style={{ margin: 0 }}>Incubation Platform</Title>
         </div>
         <Space>
@@ -330,97 +323,119 @@ export const FunderLanding: React.FC = () => {
             </Tabs>
           </div>
 
-          <Row gutter={[24, 24]}>
-            {participants.map((opportunity) => (
-              <Col key={opportunity.id} xs={24} sm={12} lg={8} style={{ marginBottom: 20 }}>
-                <Card
-                  hoverable
-                  style={{ height: '100%', borderRadius: 8, overflow: 'hidden' }}
-                  cover={
-                    <div style={{ position: 'relative', height: 200, background: '#f0f2f5', overflow: 'hidden' }}>
-                      {renderStatusTag(opportunity.status)}
-                      <img 
-                        alt={opportunity.name}
-                        src={opportunity.logo || `https://via.placeholder.com/300x200?text=${opportunity.name}`}
-                        style={{ 
-                          width: '100%', 
-                          height: '100%',
-                          objectFit: 'cover'
-                        }}
-                      />
-                    </div>
-                  }
-                >
-                  <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <Tag color="blue">{opportunity.category}</Tag>
-                        <Tag>{opportunity.location}</Tag>
+          {error && (
+            <Alert
+              message="Notice"
+              description={error}
+              type="warning"
+              showIcon
+              style={{ marginBottom: 20 }}
+            />
+          )}
+
+          {isLoading ? (
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <Spin size="default" />
+              <div style={{ marginTop: 10 }}>Refreshing data...</div>
+            </div>
+          ) : (
+            <Row gutter={[24, 24]}>
+              {data.map((opportunity) => (
+                <Col key={opportunity.id} xs={24} sm={12} lg={8} style={{ marginBottom: 20 }}>
+                  <Card
+                    hoverable
+                    style={{ height: '100%', borderRadius: 8, overflow: 'hidden' }}
+                    cover={
+                      <div style={{ position: 'relative', height: 200, background: '#f0f2f5', overflow: 'hidden' }}>
+                        {renderStatusTag(opportunity.status || 'active')}
+                        {/* Use placeholder image if logo doesn't load */}
+                        <img 
+                          alt={opportunity.name || 'Investment Opportunity'}
+                          src={opportunity.logo || `https://via.placeholder.com/300x200?text=${encodeURIComponent(opportunity.name || 'Opportunity')}`}
+                          style={{ 
+                            width: '100%', 
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null; // Prevent infinite loop
+                            target.src = `https://via.placeholder.com/300x200?text=${encodeURIComponent(opportunity.name || 'Opportunity')}`;
+                          }}
+                        />
                       </div>
-                      <Avatar 
-                        size="large" 
-                        src={opportunity.founderAvatar}
-                        style={{ backgroundColor: '#1890ff' }}
-                        icon={!opportunity.founderAvatar && <UserOutlined />}
-                      />
-                    </div>
-                    
-                    <Title level={4} style={{ marginTop: 10, marginBottom: 5 }}>{opportunity.name}</Title>
-                    
-                    <Paragraph ellipsis={{ rows: 2 }} style={{ height: 44 }}>
-                      {opportunity.description}
-                    </Paragraph>
-                    
-                    <div style={{ marginTop: 10, marginBottom: 5 }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>{opportunity.registrationType}</Text>
-                    </div>
-                    
-                    <Progress 
-                      percent={opportunity.progress} 
-                      status={
-                        opportunity.status === 'closed' ? 'success' : 
-                        opportunity.progress < 30 ? 'exception' : 
-                        'active'
-                      }
-                    />
-                    
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-                      <Statistic 
-                        title="Raised" 
-                        value={formatCurrency(opportunity.fundingRaised)} 
-                        valueStyle={{ fontSize: 16 }}
-                      />
-                      <Statistic 
-                        title="Goal" 
-                        value={formatCurrency(opportunity.fundingGoal)} 
-                        valueStyle={{ fontSize: 16 }}
-                      />
-                    </div>
-                    
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-                      {opportunity.status !== 'closed' ? (
-                        <Tag icon={<ClockCircleOutlined />} color="orange">
-                          {opportunity.daysLeft} days left
-                        </Tag>
-                      ) : (
-                        <Tag icon={<CheckCircleOutlined />} color="green">
-                          Funded
-                        </Tag>
-                      )}
+                    }
+                  >
+                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <Tag color="blue">{opportunity.industry || opportunity.category || 'Other'}</Tag>
+                          <Tag>{opportunity.location || 'South Africa'}</Tag>
+                        </div>
+                        <Avatar 
+                          size="large" 
+                          style={{ backgroundColor: '#1890ff' }}
+                          icon={<UserOutlined />}
+                        />
+                      </div>
                       
-                      <Button 
-                        type={opportunity.status === 'closed' ? 'default' : 'primary'} 
-                        disabled={opportunity.status === 'closed'}
-                        onClick={handleRegisterClick}
-                      >
-                        {opportunity.status === 'closed' ? 'Funded' : 'Invest Now'}
-                      </Button>
-                    </div>
-                  </Space>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+                      <Title level={4} style={{ marginTop: 10, marginBottom: 5 }}>{opportunity.name || 'Unnamed Opportunity'}</Title>
+                      
+                      <Paragraph ellipsis={{ rows: 2 }} style={{ height: 44 }}>
+                        {opportunity.description || 'No description available'}
+                      </Paragraph>
+                      
+                      <div style={{ marginTop: 10, marginBottom: 5 }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>{opportunity.registrationType || opportunity.stage || 'Standard Registration'}</Text>
+                      </div>
+                      
+                      <Progress 
+                        percent={opportunity.progress || 0} 
+                        status={
+                          opportunity.status === 'closed' || opportunity.status === 'inactive' ? 'success' : 
+                          (opportunity.progress || 0) < 30 ? 'exception' : 
+                          'active'
+                        }
+                      />
+                      
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+                        <Statistic 
+                          title="Raised" 
+                          value={formatCurrency(opportunity.fundingRaised || ((opportunity.progress || 0) * 10000))} 
+                          valueStyle={{ fontSize: 16 }}
+                        />
+                        <Statistic 
+                          title="Goal" 
+                          value={formatCurrency(opportunity.fundingGoal || 1000000)} 
+                          valueStyle={{ fontSize: 16 }}
+                        />
+                      </div>
+                      
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+                        {opportunity.status !== 'closed' && opportunity.status !== 'inactive' ? (
+                          <Tag icon={<ClockCircleOutlined />} color="orange">
+                            {(opportunity.daysLeft || 30) > 0 ? `${opportunity.daysLeft || 30} days left` : 'Closing soon'}
+                          </Tag>
+                        ) : (
+                          <Tag icon={<CheckCircleOutlined />} color="green">
+                            Not Available
+                          </Tag>
+                        )}
+                        
+                        <Button 
+                          type={opportunity.status === 'closed' || opportunity.status === 'inactive' ? 'default' : 'primary'} 
+                          disabled={opportunity.status === 'closed' || opportunity.status === 'inactive'}
+                          onClick={handleRegisterClick}
+                        >
+                          {opportunity.status === 'closed' || opportunity.status === 'inactive' ? 'Not Available' : 'Invest Now'}
+                        </Button>
+                      </div>
+                    </Space>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          )}
           
           <div style={{ textAlign: 'center', margin: '40px 0' }}>
             <Button type="primary" size="large" onClick={handleRegisterClick}>
@@ -491,5 +506,111 @@ export const FunderLanding: React.FC = () => {
         </Text>
       </Footer>
     </Layout>
+  );
+};
+
+// Data fetcher component
+const DataFetcher = () => {
+  const [participants, setParticipants] = useState<Opportunity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Use the same participants data as OperationsDashboard.tsx
+  useEffect(() => {
+    // Set document title
+    document.title = "Investment Opportunities • Incubation Platform";
+    
+    // Use the static participants data directly instead of Firebase fetching
+    // This matches the approach used in OperationsDashboard.tsx
+    const dashboardParticipants = [
+      { id: '1', name: 'TechSolutions Inc.', stage: 'Early', mentorAssigned: 'Yes', nextReview: '2023-11-15', status: 'Active' },
+      { id: '2', name: 'GreenEnergy Startup', stage: 'Growth', mentorAssigned: 'Yes', nextReview: '2023-11-10', status: 'Active' },
+      { id: '3', name: 'HealthTech Innovations', stage: 'Scaling', mentorAssigned: 'No', nextReview: '2023-11-20', status: 'Warning' },
+      { id: '4', name: 'EdTech Solutions', stage: 'Early', mentorAssigned: 'Yes', nextReview: '2023-12-05', status: 'Active' },
+      { id: '5', name: 'FinTech Revolution', stage: 'Growth', mentorAssigned: 'No', nextReview: '2023-11-25', status: 'Warning' },
+    ];
+    
+    // Transform the dashboard participants into investment opportunities
+    const transformedParticipants: Opportunity[] = dashboardParticipants.map(participant => ({
+      id: participant.id,
+      name: participant.name,
+      logo: {
+        'TechSolutions Inc.': 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&auto=format&fit=crop&q=60',
+        'GreenEnergy Startup': 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=600&auto=format&fit=crop&q=60',
+        'HealthTech Innovations': 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&auto=format&fit=crop&q=60',
+        'EdTech Solutions': 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&auto=format&fit=crop&q=60',
+        'FinTech Revolution': 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=600&auto=format&fit=crop&q=60'
+      }[participant.name] || `https://placehold.co/300x200/1e293b/ffffff?text=${encodeURIComponent(participant.name)}&font=open-sans`,
+      industry: {
+        'TechSolutions Inc.': 'Software', 
+        'GreenEnergy Startup': 'Renewable Energy',
+        'HealthTech Innovations': 'Healthcare',
+        'EdTech Solutions': 'Education',
+        'FinTech Revolution': 'Finance'
+      }[participant.name] || 'Technology',
+      location: {
+        'TechSolutions Inc.': 'Cape Town, SA', 
+        'GreenEnergy Startup': 'Johannesburg, SA',
+        'HealthTech Innovations': 'Durban, SA',
+        'EdTech Solutions': 'Cape Town, SA',
+        'FinTech Revolution': 'Pretoria, SA'
+      }[participant.name] || 'South Africa',
+      description: {
+        'TechSolutions Inc.': 'Cloud-based software solutions for small businesses with focus on automation and efficiency',
+        'GreenEnergy Startup': 'Affordable solar solutions for residential and commercial properties with innovative financing models',
+        'HealthTech Innovations': 'AI-powered diagnostic tools for rural healthcare facilities with limited access to specialists',
+        'EdTech Solutions': 'Digital platform connecting students with tutors and educational resources tailored for African curriculum',
+        'FinTech Revolution': 'Mobile banking solutions for underserved communities across Africa with focus on microloans'
+      }[participant.name] || 'Innovative startup in the technology sector',
+      status: participant.status.toLowerCase(),
+      stage: participant.stage,
+      progress: {
+        'TechSolutions Inc.': 32,
+        'GreenEnergy Startup': 68,
+        'HealthTech Innovations': 75,
+        'EdTech Solutions': 15,
+        'FinTech Revolution': 52
+      }[participant.name] || 50,
+      fundingGoal: {
+        'TechSolutions Inc.': 750000,
+        'GreenEnergy Startup': 1200000,
+        'HealthTech Innovations': 500000,
+        'EdTech Solutions': 300000,
+        'FinTech Revolution': 600000
+      }[participant.name] || 1000000,
+      fundingRaised: {
+        'TechSolutions Inc.': 240000,
+        'GreenEnergy Startup': 816000,
+        'HealthTech Innovations': 375000,
+        'EdTech Solutions': 45000,
+        'FinTech Revolution': 312000
+      }[participant.name] || 500000,
+      daysLeft: {
+        'TechSolutions Inc.': 45,
+        'GreenEnergy Startup': 30,
+        'HealthTech Innovations': 15,
+        'EdTech Solutions': 60,
+        'FinTech Revolution': 25
+      }[participant.name] || 30,
+      registrationType: participant.stage === 'Early' ? 'Capital R • Reg S' : 
+                          participant.stage === 'Growth' ? 'Republic Funding Portal • Reg CF' : 
+                          'Capital R • 1940 Act Registered Fund'
+    }));
+    
+    setParticipants(transformedParticipants);
+    setLoading(false);
+  }, []);
+  
+  return <FunderLandingContent data={participants} isLoading={loading} error={error} />;
+};
+
+// Main exported component with all error handling in place
+export const FunderLanding: React.FC = () => {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <DataFetcher />
+      </Suspense>
+    </ErrorBoundary>
   );
 }; 
