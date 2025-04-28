@@ -55,9 +55,12 @@ const App = () => {
               }}
             >
               <Routes>
-                {/* Public Routes */}
+                {/* Public Routes - this will be accessible to all users without authentication */}
                 <Route path="/" element={<FunderLanding />} />
+                <Route path='/register' element={<RegisterPage />} />
+                <Route path='/login' element={<LoginPage />} />
                 
+                {/* Authenticated Routes */}
                 <Route
                   element={
                     <Authenticated
@@ -70,7 +73,8 @@ const App = () => {
                     </Authenticated>
                   }
                 >
-                  <Route index element={<DashboardPage />} />
+                  {/* Remove the index route as we want the funder landing to be the main index */}
+                  <Route path='/dashboard' element={<DashboardPage />} />
                   
                   {/* Admin routes with AdminRouteGuard */}
                   <Route element={<AdminRouteGuard />}>
@@ -114,22 +118,12 @@ const App = () => {
                   </Route>
                   
                   <Route path="/forms/:formId" element={<FormSubmission />} />
+                  {/* Fallback for authenticated but invalid routes */}
                   <Route path='*' element={<ErrorComponent />} />
                 </Route>
 
-                <Route
-                  element={
-                    <Authenticated
-                      key='authenticated-auth'
-                      fallback={<Outlet />}
-                    >
-                      <NavigateToResource resource='dashboard' />
-                    </Authenticated>
-                  }
-                >
-                  <Route path='/login' element={<LoginPage />} />
-                </Route>
-                <Route path='/register' element={<RegisterPage />} />
+                {/* Fallback for all other routes - direct to funder landing */}
+                <Route path='*' element={<FunderLanding />} />
               </Routes>
               <UnsavedChangesNotifier />
               <DocumentTitleHandler />
