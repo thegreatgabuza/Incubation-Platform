@@ -31,27 +31,29 @@ export const LoginPage: React.FC = () => {
   const handleLogin = async (values: any) => {
     try {
       setLoading(true);
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      const user = userCredential.user;
+      const userCred = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCred.user;
 
       // Fetch user role from Firestore
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      let redirectPath = "/dashboard";
-      
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const role = userData.role;
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
 
-        // Redirect based on role
-        if (role === 'Admin') {
-          redirectPath = "/admin";
-        } else if (role === 'Director') {
-          redirectPath = "/director";
-        } else if (role === 'Operations') {
-          redirectPath = "/dashboard"; // Operations dashboard
-        } else if (role === 'Incubatee' || role === 'Funder' || role === 'Consultant') {
-          redirectPath = "/"; // Default dashboard
-        }
+      if (!docSnap.exists()) {
+        message.error("User record not found in database.");
+        return;
+      }
+
+      const userData = docSnap.data();
+      const role = userData.role;
+      let redirectPath = `/${role.toLowerCase()}`;
+
+      // Handle specific role redirects
+      if (role === 'Admin') {
+        redirectPath = "/admin";
+      } else if (role === 'Director') {
+        redirectPath = "/director";
+      } else if (role === 'Operations') {
+        redirectPath = "/dashboard"; // Operations dashboard
       }
 
       message.success("🎉 Login successful! Redirecting...", 2);
