@@ -24,13 +24,16 @@ import { FunderAnalytics } from './routes/funder/analytics';
 import { FunderDocuments } from './routes/funder/documents';
 import { FunderDueDiligence } from './routes/funder/due-diligence';
 import FunderCalendarPage from './routes/funder/calendar';
+import { GovernmentDashboard, ParticipantDirectory } from './routes/government';
+import ProgramsDirectory from './routes/government/programs';
+import { ImpactReports } from './routes/government/reports';
 
 import "@refinedev/antd/dist/reset.css";
 
 import FormManagement from "./routes/admin/forms/index";
 import FormSubmission from "./components/form-submission/FormSubmission";
 import { FormOutlined } from "@ant-design/icons";
-import { AdminRouteGuard, ConsultantRouteGuard, DirectorRouteGuard, OperationsRouteGuard } from "./components/guards";
+import { AdminRouteGuard, ConsultantRouteGuard, DirectorRouteGuard, OperationsRouteGuard, GovernmentRouteGuard } from "./components/guards";
 import { DirectorDashboardPage } from "./routes/director-dashboard";
 import { ConsultantDashboardPage } from "./routes/consultant-dashboard";
 import { OperationsDashboardPage } from "./routes/operations-dashboard";
@@ -142,6 +145,25 @@ const App = () => {
                   <Route path="analytics" element={<FunderAnalytics />} />
                   <Route path="documents" element={<FunderDocuments />} />
                   <Route path="calendar" element={<FunderCalendarPage />} />
+                </Route>
+                
+                {/* Government Entity Routes */}
+                <Route
+                  path="/government/*"
+                  element={
+                    <Authenticated
+                      key="government-layout"
+                      fallback={<CatchAllNavigate to="/login" />}
+                    >
+                      <RoleLayout role="government" />
+                    </Authenticated>
+                  }
+                >
+                  <Route index element={<GovernmentDashboard />} />
+                  <Route path="participants" element={<ParticipantDirectory />} />
+                  <Route path="programs" element={<ProgramsDirectory />} />
+                  <Route path="reports" element={<ImpactReports />} />
+                  <Route path="policy" element={<div>Policy Alignment - Coming Soon</div>} />
                 </Route>
 
                 {/* Fallback for all other routes - direct to funder landing */}

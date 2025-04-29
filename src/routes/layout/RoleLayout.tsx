@@ -13,7 +13,11 @@ import {
   LogoutOutlined,
   SettingOutlined,
   DownOutlined,
-  CalendarOutlined
+  CalendarOutlined,
+  TeamOutlined,
+  ProjectOutlined,
+  FundOutlined,
+  FlagOutlined
 } from '@ant-design/icons';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/firebase';
@@ -21,15 +25,18 @@ import { auth } from '@/firebase';
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 
-export const RoleLayout = ({ role }: { role: 'funder' | 'incubatee' | 'consultant' | 'operations' }) => {
+export const RoleLayout = ({ role }: { role: 'funder' | 'incubatee' | 'consultant' | 'operations' | 'government' | 'corporate' }) => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>('User');
+  
+  console.log('RoleLayout rendered with role:', role);
   
   useEffect(() => {
     // Get user info when component mounts
     const user = auth.currentUser;
     if (user) {
       setUserName(user.displayName || user.email || 'User');
+      console.log('Current user in RoleLayout:', user.email);
     }
   }, []);
   
@@ -42,6 +49,20 @@ export const RoleLayout = ({ role }: { role: 'funder' | 'incubatee' | 'consultan
       { key: 'analytics', icon: <BarChartOutlined />, label: <Link to="/funder/analytics">Analytics</Link> },
       { key: 'documents', icon: <FileTextOutlined />, label: <Link to="/funder/documents">Documents</Link> },
       { key: 'calendar', icon: <CalendarOutlined />, label: <Link to="/funder/calendar">Calendar</Link> },
+    ],
+    government: [
+      { key: 'dashboard', icon: <BankOutlined />, label: <Link to="/government">Dashboard</Link> },
+      { key: 'participants', icon: <TeamOutlined />, label: <Link to="/government/participants">Participant Directory</Link> },
+      { key: 'programs', icon: <ProjectOutlined />, label: <Link to="/government/programs">Support Programs</Link> },
+      { key: 'reports', icon: <BarChartOutlined />, label: <Link to="/government/reports">Impact Reports</Link> },
+      { key: 'policy', icon: <FlagOutlined />, label: <Link to="/government/policy">Policy Alignment</Link> },
+    ],
+    corporate: [
+      { key: 'dashboard', icon: <BankOutlined />, label: <Link to="/corporate">Dashboard</Link> },
+      { key: 'participants', icon: <TeamOutlined />, label: <Link to="/corporate/participants">Participant Directory</Link> },
+      { key: 'donations', icon: <FundOutlined />, label: <Link to="/corporate/donations">Donations</Link> },
+      { key: 'csr', icon: <ProjectOutlined />, label: <Link to="/corporate/csr">CSR Initiatives</Link> },
+      { key: 'reports', icon: <BarChartOutlined />, label: <Link to="/corporate/reports">Impact Reports</Link> },
     ],
     incubatee: [
       { key: 'dashboard', label: <Link to="/incubatee">Dashboard</Link> },

@@ -33,7 +33,11 @@ export const authProvider: AuthProvider = {
         } else if (role === 'Consultant') {
           return { success: true, redirectTo: "/consultant" };
         } else if (role === 'Funder') {
-          return { success: true, redirectTo: "/dashboard" };
+          return { success: true, redirectTo: "/funder" };
+        } else if (role === 'Government') {
+          return { success: true, redirectTo: "/government" };
+        } else if (role === 'Corporate') {
+          return { success: true, redirectTo: "/corporate" };
         }
       }
 
@@ -90,7 +94,10 @@ export const authProvider: AuthProvider = {
                          currentPath.startsWith("/director") || 
                          currentPath.startsWith("/operations") || 
                          currentPath.startsWith("/consultant") || 
-                         currentPath.startsWith("/dashboard")) {
+                         currentPath.startsWith("/dashboard") ||
+                         currentPath.startsWith("/government") ||
+                         currentPath.startsWith("/corporate") ||
+                         currentPath.startsWith("/funder")) {
                 // User accessing role-specific routes - verify authentication only
                 console.log("User accessing protected route:", currentPath);
                 resolve({ authenticated: true });
