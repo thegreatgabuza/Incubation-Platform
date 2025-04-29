@@ -11,7 +11,8 @@
     "lint": "eslint src --fix",
     "refine": "refine",
     "start": "refine start",
-    "seed:users": "npx tsx src/scripts/seedUsers.ts"
+    "seed:users": "npx tsx src/scripts/seedUsers.ts",
+    "seed:govuser": "node src/scripts/seedGovUser.js"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^1.17.2",
@@ -44,6 +45,7 @@
     "react-csv": "^2.2.2",
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.8.1",
+    "recharts": "^2.15.3",
     "styled-components": "^6.1.17",
     "uuid": "^11.1.0"
   },

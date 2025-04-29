@@ -22,11 +22,14 @@ import {
   ClockCircleOutlined, 
   CheckCircleOutlined,
   RocketOutlined,
-  DollarOutlined,
+  TeamOutlined,
   UserOutlined,
   BuildOutlined,
   ArrowRightOutlined,
-  WarningOutlined
+  WarningOutlined,
+  GlobalOutlined,
+  BarChartOutlined,
+  LikeOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, where, limit, QuerySnapshot, DocumentData } from "firebase/firestore";
@@ -60,7 +63,7 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
             message="Something went wrong"
             description={
               <div>
-                <p>We encountered an issue loading the investment opportunities.</p>
+                <p>We encountered an issue loading the platform content.</p>
                 <p>Please try refreshing the page or contact support if the problem persists.</p>
                 <p style={{ fontSize: '12px', marginTop: '20px' }}>
                   Error details: {this.state.error?.message || "Unknown error"}
@@ -100,8 +103,8 @@ const PageLoader = () => (
   </div>
 );
 
-// Define an opportunity interface for type safety
-interface Opportunity {
+// Define a participant interface for type safety
+interface Participant {
   id: string;
   name: string;
   logo?: string;
@@ -109,13 +112,7 @@ interface Opportunity {
   industry?: string;
   location?: string;
   description?: string;
-  fundingGoal?: number;
-  fundingRaised?: number;
-  progress?: number;
-  daysLeft?: number;
   status?: string;
-  founderInfo?: string;
-  registrationType?: string;
   stage?: string;
   team?: number;
   [key: string]: any; // For any additional fields from Firebase
@@ -124,59 +121,36 @@ interface Opportunity {
 // Platform statistics
 const platformStats = [
   {
-    title: "Companies Funded",
+    title: "Active Participants",
     value: 125,
-    icon: <BuildOutlined />
+    icon: <TeamOutlined />
   },
   {
-    title: "Funder Community",
-    value: "1.5M+",
+    title: "Support Community",
+    value: "1.5K+",
     icon: <UserOutlined />
   },
   {
-    title: "Capital Raised",
-    value: "R75M+",
-    icon: <DollarOutlined />
+    title: "Success Stories",
+    value: "85+",
+    icon: <LikeOutlined />
   },
   {
-    title: "Success Rate",
+    title: "Growth Rate",
     value: "72%",
-    icon: <RocketOutlined />
+    icon: <BarChartOutlined />
   }
 ];
 
-// Function to format currency
-const formatCurrency = (amount: number | undefined | null) => {
-  // Safety check for undefined or null values
-  if (amount === undefined || amount === null) {
-    return 'R0';
-  }
-  
-  // Make sure amount is a number
-  const numericAmount = typeof amount === 'number' ? amount : parseFloat(String(amount));
-  
-  // Handle NaN case
-  if (isNaN(numericAmount)) {
-    return 'R0';
-  }
-  
-  try {
-    return `R${numericAmount.toLocaleString('en-ZA')}`;
-  } catch (error) {
-    console.error('Error formatting currency:', error);
-    return `R${numericAmount}`;
-  }
-};
-
 // Props interface for the content component
-interface FunderLandingContentProps {
-  data: Opportunity[];
+interface PlatformLandingContentProps {
+  data: Participant[];
   isLoading: boolean;
   error: string | null;
 }
 
 // This is the main content separated from data fetching logic
-const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoading, error }) => {
+const PlatformLandingContent: React.FC<PlatformLandingContentProps> = ({ data, isLoading, error }) => {
   const navigate = useNavigate();
   
   const handleRegisterClick = () => {
@@ -191,20 +165,20 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
     switch (status) {
       case 'trending':
       case 'active':
-        return <Badge.Ribbon text={<><FireOutlined /> ACTIVE</>} color="red" />;
+        return <Badge.Ribbon text={<><FireOutlined /> ACTIVE</>} color="green" />;
       case 'featured':
       case 'warning':
-        return <Badge.Ribbon text="AT RISK" />;
+        return <Badge.Ribbon text="FEATURED" color="blue" />;
       case 'closed':
       case 'inactive':
-        return <Badge.Ribbon text={<><CheckCircleOutlined /> INACTIVE</>} color="green" />;
+        return <Badge.Ribbon text={<><CheckCircleOutlined /> INACTIVE</>} color="gray" />;
       default:
         return null;
     }
   };
 
   return (
-    <Layout className="funder-landing-layout">
+    <Layout className="platform-landing-layout">
       <Header style={{ 
         position: 'sticky', 
         top: 0, 
@@ -238,9 +212,9 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
           borderRadius: '0 0 20px 20px',
           marginBottom: 30
         }}>
-          <Title level={1}>Invest in South Africa's Future</Title>
+          <Title level={1}>South Africa's Innovation Ecosystem</Title>
           <Paragraph style={{ fontSize: 18, maxWidth: 800, margin: '0 auto 20px' }}>
-            Connect with innovative businesses, support economic growth, and build your investment portfolio with carefully vetted opportunities.
+            Join our platform connecting entrepreneurs, investors, government entities, and corporates to build sustainable growth and innovation in South Africa.
           </Paragraph>
           <Space size="large">
             <Button 
@@ -249,14 +223,14 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
               onClick={handleRegisterClick}
               style={{ height: 48, fontSize: 16, padding: '0 30px' }}
             >
-              Start Investing
+              Join the Platform
             </Button>
             <Button 
               size="large" 
               style={{ height: 48, fontSize: 16 }}
-              onClick={() => document.getElementById('opportunities')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById('participants')?.scrollIntoView({ behavior: 'smooth' })}
             >
-              Browse Opportunities
+              View Participants
             </Button>
           </Space>
         </div>
@@ -277,49 +251,58 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
           ))}
         </Row>
 
-        {/* How it Works */}
+        {/* Platform Users */}
         <div style={{ textAlign: 'center', margin: '50px 0' }}>
-          <Title level={2}>How It Works</Title>
+          <Title level={2}>Who Uses Our Platform</Title>
           <Row gutter={[24, 24]} style={{ marginTop: 30 }}>
-            <Col xs={24} sm={8}>
-              <Card style={{ height: 260 }}>
-                <div style={{ fontSize: 36, color: '#1890ff', marginBottom: 20 }}>1</div>
-                <Title level={4}>Register & Verify</Title>
+            <Col xs={24} sm={6}>
+              <Card style={{ height: 240 }}>
+                <GlobalOutlined style={{ fontSize: 36, color: '#1890ff', marginBottom: 20 }} />
+                <Title level={4}>Government Entities</Title>
                 <Paragraph>
-                  Create an account and verify your status as an accredited investor according to South African financial regulations.
+                  Track economic development, monitor program effectiveness, and connect with innovative entrepreneurs.
                 </Paragraph>
               </Card>
             </Col>
-            <Col xs={24} sm={8}>
-              <Card style={{ height: 260 }}>
-                <div style={{ fontSize: 36, color: '#1890ff', marginBottom: 20 }}>2</div>
-                <Title level={4}>Browse & Select</Title>
+            <Col xs={24} sm={6}>
+              <Card style={{ height: 240 }}>
+                <BarChartOutlined style={{ fontSize: 36, color: '#1890ff', marginBottom: 20 }} />
+                <Title level={4}>Investors</Title>
                 <Paragraph>
-                  Explore vetted opportunities across various sectors and review company information, financials, and founder backgrounds.
+                  Discover vetted opportunities, build relationships, and support South Africa's innovation ecosystem.
                 </Paragraph>
               </Card>
             </Col>
-            <Col xs={24} sm={8}>
-              <Card style={{ height: 260 }}>
-                <div style={{ fontSize: 36, color: '#1890ff', marginBottom: 20 }}>3</div>
-                <Title level={4}>Invest & Track</Title>
+            <Col xs={24} sm={6}>
+              <Card style={{ height: 240 }}>
+                <BuildOutlined style={{ fontSize: 36, color: '#1890ff', marginBottom: 20 }} />
+                <Title level={4}>Entrepreneurs</Title>
                 <Paragraph>
-                  Make investments in companies you believe in and track their progress through regular updates and reporting.
+                  Access resources, mentorship, and connections to scale your impactful solution.
+                </Paragraph>
+              </Card>
+            </Col>
+            <Col xs={24} sm={6}>
+              <Card style={{ height: 240 }}>
+                <TeamOutlined style={{ fontSize: 36, color: '#1890ff', marginBottom: 20 }} />
+                <Title level={4}>Corporates</Title>
+                <Paragraph>
+                  Connect with innovative startups, discover partnership opportunities, and support ecosystem development.
                 </Paragraph>
               </Card>
             </Col>
           </Row>
         </div>
 
-        {/* Investment Opportunities */}
-        <div id="opportunities" style={{ marginTop: 60, marginBottom: 40 }}>
+        {/* Featured Participants */}
+        <div id="participants" style={{ marginTop: 60, marginBottom: 40 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <Title level={2}>Live Investment Opportunities</Title>
+            <Title level={2}>Featured Participants</Title>
             <Tabs defaultActiveKey="all" style={{ marginBottom: 0 }}>
-              <TabPane tab="All Opportunities" key="all" />
+              <TabPane tab="All Participants" key="all" />
               <TabPane tab="Trending" key="trending" />
-              <TabPane tab="Closing Soon" key="closing" />
-              <TabPane tab="Recently Added" key="recent" />
+              <TabPane tab="New Entries" key="recent" />
+              <TabPane tab="Success Stories" key="success" />
             </Tabs>
           </div>
 
@@ -340,18 +323,18 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
             </div>
           ) : (
             <Row gutter={[24, 24]}>
-              {data.map((opportunity) => (
-                <Col key={opportunity.id} xs={24} sm={12} lg={8} style={{ marginBottom: 20 }}>
+              {data.map((participant) => (
+                <Col key={participant.id} xs={24} sm={12} lg={8} style={{ marginBottom: 20 }}>
                   <Card
                     hoverable
                     style={{ height: '100%', borderRadius: 8, overflow: 'hidden' }}
                     cover={
                       <div style={{ position: 'relative', height: 200, background: '#f0f2f5', overflow: 'hidden' }}>
-                        {renderStatusTag(opportunity.status || 'active')}
+                        {renderStatusTag(participant.status || 'active')}
                         {/* Use placeholder image if logo doesn't load */}
                         <img 
-                          alt={opportunity.name || 'Investment Opportunity'}
-                          src={opportunity.logo || `https://via.placeholder.com/300x200?text=${encodeURIComponent(opportunity.name || 'Opportunity')}`}
+                          alt={participant.name || 'Program Participant'}
+                          src={participant.logo || `https://via.placeholder.com/300x200?text=${encodeURIComponent(participant.name || 'Participant')}`}
                           style={{ 
                             width: '100%', 
                             height: '100%',
@@ -360,7 +343,7 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.onerror = null; // Prevent infinite loop
-                            target.src = `https://via.placeholder.com/300x200?text=${encodeURIComponent(opportunity.name || 'Opportunity')}`;
+                            target.src = `https://via.placeholder.com/300x200?text=${encodeURIComponent(participant.name || 'Participant')}`;
                           }}
                         />
                       </div>
@@ -369,8 +352,8 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
                     <Space direction="vertical" size="small" style={{ width: '100%' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
-                          <Tag color="blue">{opportunity.industry || opportunity.category || 'Other'}</Tag>
-                          <Tag>{opportunity.location || 'South Africa'}</Tag>
+                          <Tag color="blue">{participant.industry || participant.category || 'Other'}</Tag>
+                          <Tag>{participant.location || 'South Africa'}</Tag>
                         </div>
                         <Avatar 
                           size="large" 
@@ -379,55 +362,37 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
                         />
                       </div>
                       
-                      <Title level={4} style={{ marginTop: 10, marginBottom: 5 }}>{opportunity.name || 'Unnamed Opportunity'}</Title>
+                      <Title level={4} style={{ marginTop: 10, marginBottom: 5 }}>{participant.name || 'Unnamed Participant'}</Title>
                       
-                      <Paragraph ellipsis={{ rows: 2 }} style={{ height: 44 }}>
-                        {opportunity.description || 'No description available'}
+                      <Paragraph ellipsis={{ rows: 3 }} style={{ height: 66 }}>
+                        {participant.description || 'No description available'}
                       </Paragraph>
                       
                       <div style={{ marginTop: 10, marginBottom: 5 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>{opportunity.registrationType || opportunity.stage || 'Standard Registration'}</Text>
-                      </div>
-                      
-                      <Progress 
-                        percent={opportunity.progress || 0} 
-                        status={
-                          opportunity.status === 'closed' || opportunity.status === 'inactive' ? 'success' : 
-                          (opportunity.progress || 0) < 30 ? 'exception' : 
-                          'active'
-                        }
-                      />
-                      
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-                        <Statistic 
-                          title="Raised" 
-                          value={formatCurrency(opportunity.fundingRaised || ((opportunity.progress || 0) * 10000))} 
-                          valueStyle={{ fontSize: 16 }}
-                        />
-                        <Statistic 
-                          title="Goal" 
-                          value={formatCurrency(opportunity.fundingGoal || 1000000)} 
-                          valueStyle={{ fontSize: 16 }}
-                        />
+                        <Space>
+                          <Tag color="cyan">
+                            {participant.stage || 'Growth Stage'}
+                          </Tag>
+                          {participant.team && (
+                            <Tag color="purple">
+                              Team: {participant.team}
+                            </Tag>
+                          )}
+                        </Space>
                       </div>
                       
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-                        {opportunity.status !== 'closed' && opportunity.status !== 'inactive' ? (
-                          <Tag icon={<ClockCircleOutlined />} color="orange">
-                            {(opportunity.daysLeft || 30) > 0 ? `${opportunity.daysLeft || 30} days left` : 'Closing soon'}
-                          </Tag>
-                        ) : (
-                          <Tag icon={<CheckCircleOutlined />} color="green">
-                            Not Available
-                          </Tag>
-                        )}
+                        <Tag icon={participant.status !== 'closed' && participant.status !== 'inactive' ? 
+                          <ClockCircleOutlined /> : <CheckCircleOutlined />} 
+                          color={participant.status !== 'closed' && participant.status !== 'inactive' ? "green" : "default"}>
+                          {participant.status !== 'closed' && participant.status !== 'inactive' ? 'Active' : 'Inactive'}
+                        </Tag>
                         
                         <Button 
-                          type={opportunity.status === 'closed' || opportunity.status === 'inactive' ? 'default' : 'primary'} 
-                          disabled={opportunity.status === 'closed' || opportunity.status === 'inactive'}
+                          type="primary" 
                           onClick={handleRegisterClick}
                         >
-                          {opportunity.status === 'closed' || opportunity.status === 'inactive' ? 'Not Available' : 'Invest Now'}
+                          Learn More
                         </Button>
                       </div>
                     </Space>
@@ -439,28 +404,28 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
           
           <div style={{ textAlign: 'center', margin: '40px 0' }}>
             <Button type="primary" size="large" onClick={handleRegisterClick}>
-              View All Opportunities <ArrowRightOutlined />
+              Join The Platform <ArrowRightOutlined />
             </Button>
           </div>
         </div>
         
-        {/* Why Invest Section */}
+        {/* Why Join Section */}
         <div style={{ background: '#f0f5ff', padding: '50px', borderRadius: 10, marginBottom: 40 }}>
-          <Title level={2} style={{ textAlign: 'center', marginBottom: 40 }}>Why Invest Through Our Platform</Title>
+          <Title level={2} style={{ textAlign: 'center', marginBottom: 40 }}>Why Join Our Platform</Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
               <Card style={{ height: 220 }}>
-                <Title level={4}>Trusted Vetting Process</Title>
+                <Title level={4}>Comprehensive Ecosystem</Title>
                 <Paragraph>
-                  All companies undergo a rigorous selection process to ensure quality investment opportunities.
+                  Connect with all stakeholders in South Africa's innovation and entrepreneurship ecosystem in one place.
                 </Paragraph>
               </Card>
             </Col>
             <Col xs={24} md={8}>
               <Card style={{ height: 220 }}>
-                <Title level={4}>Support South African Innovation</Title>
+                <Title level={4}>Drive Economic Growth</Title>
                 <Paragraph>
-                  Direct impact on local economy by supporting entrepreneurs solving real problems.
+                  Support sustainable development by participating in initiatives that create jobs and solve real problems.
                 </Paragraph>
               </Card>
             </Col>
@@ -468,7 +433,7 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
               <Card style={{ height: 220 }}>
                 <Title level={4}>Transparent Reporting</Title>
                 <Paragraph>
-                  Regular updates and performance metrics to track the progress of your investments.
+                  Access regular updates and performance metrics to track impact and program effectiveness.
                 </Paragraph>
               </Card>
             </Col>
@@ -481,7 +446,7 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
           <Col xs={24} md={8}>
             <Title level={4} style={{ color: 'white' }}>Incubation Platform</Title>
             <Paragraph style={{ color: 'rgba(255,255,255,0.65)' }}>
-              Connecting accredited investors with promising South African startups and small businesses.
+              Connecting entrepreneurs, investors, government entities, and corporates to build South Africa's future.
             </Paragraph>
           </Col>
           <Col xs={24} md={8}>
@@ -489,13 +454,13 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
             <div>
               <a href="#" style={{ color: 'rgba(255,255,255,0.65)', display: 'block', marginBottom: 8 }}>Terms of Service</a>
               <a href="#" style={{ color: 'rgba(255,255,255,0.65)', display: 'block', marginBottom: 8 }}>Privacy Policy</a>
-              <a href="#" style={{ color: 'rgba(255,255,255,0.65)', display: 'block', marginBottom: 8 }}>Investment Risks</a>
+              <a href="#" style={{ color: 'rgba(255,255,255,0.65)', display: 'block', marginBottom: 8 }}>Data Protection</a>
             </div>
           </Col>
           <Col xs={24} md={8}>
             <Title level={4} style={{ color: 'white' }}>Get Started</Title>
             <Space direction="vertical">
-              <Button type="primary" ghost onClick={handleRegisterClick}>Register as Investor</Button>
+              <Button type="primary" ghost onClick={handleRegisterClick}>Register Now</Button>
               <Button type="link" style={{ color: 'rgba(255,255,255,0.65)' }} onClick={handleLoginClick}>Already have an account? Log in</Button>
             </Space>
           </Col>
@@ -511,17 +476,15 @@ const FunderLandingContent: React.FC<FunderLandingContentProps> = ({ data, isLoa
 
 // Data fetcher component
 const DataFetcher = () => {
-  const [participants, setParticipants] = useState<Opportunity[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Use the same participants data as OperationsDashboard.tsx
   useEffect(() => {
     // Set document title
-    document.title = "Investment Opportunities • Incubation Platform";
+    document.title = "Incubation Platform • South Africa's Innovation Ecosystem";
     
     // Use the static participants data directly instead of Firebase fetching
-    // This matches the approach used in OperationsDashboard.tsx
     const dashboardParticipants = [
       { id: '1', name: 'TechSolutions Inc.', stage: 'Early', mentorAssigned: 'Yes', nextReview: '2023-11-15', status: 'Active' },
       { id: '2', name: 'GreenEnergy Startup', stage: 'Growth', mentorAssigned: 'Yes', nextReview: '2023-11-10', status: 'Active' },
@@ -530,8 +493,8 @@ const DataFetcher = () => {
       { id: '5', name: 'FinTech Revolution', stage: 'Growth', mentorAssigned: 'No', nextReview: '2023-11-25', status: 'Warning' },
     ];
     
-    // Transform the dashboard participants into investment opportunities
-    const transformedParticipants: Opportunity[] = dashboardParticipants.map(participant => ({
+    // Transform the dashboard participants
+    const transformedParticipants: Participant[] = dashboardParticipants.map(participant => ({
       id: participant.id,
       name: participant.name,
       logo: {
@@ -564,44 +527,20 @@ const DataFetcher = () => {
       }[participant.name] || 'Innovative startup in the technology sector',
       status: participant.status.toLowerCase(),
       stage: participant.stage,
-      progress: {
-        'TechSolutions Inc.': 32,
-        'GreenEnergy Startup': 68,
-        'HealthTech Innovations': 75,
-        'EdTech Solutions': 15,
-        'FinTech Revolution': 52
-      }[participant.name] || 50,
-      fundingGoal: {
-        'TechSolutions Inc.': 750000,
-        'GreenEnergy Startup': 1200000,
-        'HealthTech Innovations': 500000,
-        'EdTech Solutions': 300000,
-        'FinTech Revolution': 600000
-      }[participant.name] || 1000000,
-      fundingRaised: {
-        'TechSolutions Inc.': 240000,
-        'GreenEnergy Startup': 816000,
-        'HealthTech Innovations': 375000,
-        'EdTech Solutions': 45000,
-        'FinTech Revolution': 312000
-      }[participant.name] || 500000,
-      daysLeft: {
-        'TechSolutions Inc.': 45,
-        'GreenEnergy Startup': 30,
+      team: {
+        'TechSolutions Inc.': 8,
+        'GreenEnergy Startup': 12,
         'HealthTech Innovations': 15,
-        'EdTech Solutions': 60,
-        'FinTech Revolution': 25
-      }[participant.name] || 30,
-      registrationType: participant.stage === 'Early' ? 'Capital R • Reg S' : 
-                          participant.stage === 'Growth' ? 'Republic Funding Portal • Reg CF' : 
-                          'Capital R • 1940 Act Registered Fund'
+        'EdTech Solutions': 6,
+        'FinTech Revolution': 10
+      }[participant.name] || 5
     }));
     
     setParticipants(transformedParticipants);
     setLoading(false);
   }, []);
   
-  return <FunderLandingContent data={participants} isLoading={loading} error={error} />;
+  return <PlatformLandingContent data={participants} isLoading={loading} error={error} />;
 };
 
 // Main exported component with all error handling in place
