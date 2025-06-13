@@ -5,16 +5,33 @@ import { getStorage, FirebaseStorage } from "firebase/storage";
 import { getFunctions, Functions } from "firebase/functions";
 import { getAnalytics, Analytics, isSupported } from "firebase/analytics";
 
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// ✅ Firebase configuration using environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyDOugyzJkqn4TpD-o1fxWxs7uCK2bCniQQ",
-  authDomain: "demodbn.firebaseapp.com",
-  projectId: "demodbn",
-  storageBucket: "demodbn.firebasestorage.app",
-  messagingSenderId: "599400723868",
-  appId: "1:599400723868:web:e2b23059726bcde37cc459",
-  measurementId: "G-01MB4RKHWL"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
+
+// ✅ Validate required environment variables
+const requiredEnvVars = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN', 
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_STORAGE_BUCKET',
+  'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  'VITE_FIREBASE_APP_ID'
+];
+
+const missingEnvVars = requiredEnvVars.filter(envVar => !import.meta.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error('Missing required Firebase environment variables:', missingEnvVars);
+  console.error('Please check your .env file and ensure all Firebase configuration variables are set.');
+}
 
 // ✅ Initialize Firebase App with error handling
 let app: FirebaseApp | null = null;
@@ -26,6 +43,12 @@ let analytics: Analytics | null = null;
 
 try {
   console.log("Initializing Firebase...");
+  
+  // Check if we have the minimum required config
+  if (missingEnvVars.length > 0) {
+    throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  }
+  
   app = initializeApp(firebaseConfig);
   
   // ✅ Core Services
@@ -43,18 +66,22 @@ try {
     }
   });
   
-  // ✅ Optional: Initialize Analytics (only if supported)
-  isSupported()
-    .then((supported: boolean) => {
-      if (supported && app) {
-        analytics = getAnalytics(app);
-        console.log("Analytics initialized successfully");
-      }
-    })
-    .catch((error: Error) => {
-      console.error("Analytics not supported:", error);
-      analytics = null;
-    });
+  // ✅ Optional: Initialize Analytics (only if supported and measurementId is provided)
+  if (import.meta.env.VITE_FIREBASE_MEASUREMENT_ID) {
+    isSupported()
+      .then((supported: boolean) => {
+        if (supported && app) {
+          analytics = getAnalytics(app);
+          console.log("Analytics initialized successfully");
+        }
+      })
+      .catch((error: Error) => {
+        console.error("Analytics not supported:", error);
+        analytics = null;
+      });
+  } else {
+    console.log("Analytics measurement ID not provided, skipping analytics initialization");
+  }
     
   console.log("Firebase initialized successfully");
 
