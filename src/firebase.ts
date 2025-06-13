@@ -1,19 +1,19 @@
 import { initializeApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth, User, NextOrObserver, onAuthStateChanged } from "firebase/auth";
+import { getAuth, Auth, User, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 import { getFunctions, Functions } from "firebase/functions";
 import { getAnalytics, Analytics, isSupported } from "firebase/analytics";
 
-// ✅ Firebase config
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCqM2fTwccgFUKmrwFYP7XFVAgo-9sVArM",
-  authDomain: "incubation-platform-61610.firebaseapp.com",
-  projectId: "incubation-platform-61610",
-  storageBucket: "incubation-platform-61610.appspot.com",
-  messagingSenderId: "608623931092",
-  appId: "1:608623931092:web:449de44205d7d2d7d49541",
-  measurementId: "G-V6MZVHG72Z",
+  apiKey: "AIzaSyDOugyzJkqn4TpD-o1fxWxs7uCK2bCniQQ",
+  authDomain: "demodbn.firebaseapp.com",
+  projectId: "demodbn",
+  storageBucket: "demodbn.firebasestorage.app",
+  messagingSenderId: "599400723868",
+  appId: "1:599400723868:web:e2b23059726bcde37cc459",
+  measurementId: "G-01MB4RKHWL"
 };
 
 // ✅ Initialize Firebase App with error handling
@@ -35,7 +35,7 @@ try {
   functions = getFunctions(app);
   
   // Add auth state listener for debugging
-  auth.onAuthStateChanged((user) => {
+  onAuthStateChanged(auth, (user: User | null) => {
     if (user) {
       console.log("User is signed in:", user.uid);
     } else {
@@ -45,12 +45,13 @@ try {
   
   // ✅ Optional: Initialize Analytics (only if supported)
   isSupported()
-    .then((supported) => {
+    .then((supported: boolean) => {
       if (supported && app) {
         analytics = getAnalytics(app);
+        console.log("Analytics initialized successfully");
       }
     })
-    .catch((error) => {
+    .catch((error: Error) => {
       console.error("Analytics not supported:", error);
       analytics = null;
     });
@@ -59,23 +60,24 @@ try {
 
 } catch (error) {
   console.error("Firebase initialization error:", error);
-  // Create fallback objects to prevent the app from crashing
+  
+  // Create safe fallback objects
   app = null;
-  auth = {
+  
+  // Create a minimal auth object for fallback
+  const mockAuth = {
     currentUser: null,
-    onAuthStateChanged: (observer: NextOrObserver<User | null>) => {
-      // Use a type guard to check if the observer is a function
-      if (typeof observer === 'function') {
-        observer(null);
-      } else if (observer && typeof observer.next === 'function') {
-        observer.next(null);
-      }
-      return () => {};
-    }
-  } as Auth;
+    onAuthStateChanged: () => () => {},
+    signInWithEmailAndPassword: () => Promise.reject(new Error("Firebase not initialized")),
+    signOut: () => Promise.reject(new Error("Firebase not initialized")),
+    createUserWithEmailAndPassword: () => Promise.reject(new Error("Firebase not initialized"))
+  };
+  
+  auth = mockAuth as unknown as Auth;
   db = {} as Firestore;
   storage = {} as FirebaseStorage;
   functions = {} as Functions;
+  analytics = null;
 }
 
 // Export all services

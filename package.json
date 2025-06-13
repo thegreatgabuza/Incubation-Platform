@@ -12,7 +12,9 @@
     "refine": "refine",
     "start": "refine start",
     "seed:users": "npx tsx src/scripts/seedUsers.ts",
-    "seed:govuser": "node src/scripts/seedGovUser.js"
+    "seed:govuser": "node src/scripts/seedGovUser.js",
+    "seed:all": "npx tsx src/scripts/seedAllUsers.ts",
+    "update:names": "npx tsx src/scripts/updateUserNames.ts"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^1.17.2",
