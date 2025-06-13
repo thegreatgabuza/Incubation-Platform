@@ -108,6 +108,11 @@ export const FunderDashboard: React.FC = () => {
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const navigate = useNavigate();
 
+  // Safe wrapper for formatCurrency to handle undefined values
+  const safeCurrency = (amount: number | undefined): string => {
+    return formatCurrency(amount || 0);
+  };
+
   // Fetch investment opportunities and portfolio
   useEffect(() => {
     const fetchData = async () => {
@@ -314,9 +319,9 @@ export const FunderDashboard: React.FC = () => {
           dataIndex: 'fundingRaised',
           render: (_, record) => (
             <div>
-              <Text>{formatCurrency(record.fundingRaised)} / {formatCurrency(record.fundingGoal)}</Text>
+              <Text>{formatCurrency(record.fundingRaised || 0)} / {formatCurrency(record.fundingGoal || 0)}</Text>
               <Progress 
-                percent={record.progress} 
+                percent={record.progress || 0} 
                 size="small" 
                 status={
                   record.status === 'closed' ? 'success' : 
@@ -330,7 +335,7 @@ export const FunderDashboard: React.FC = () => {
         {
           title: 'Valuation',
           dataIndex: 'valuation',
-          render: (valuation) => formatCurrency(valuation),
+          render: (valuation) => safeCurrency(valuation),
         },
         {
           title: 'Risk Level',

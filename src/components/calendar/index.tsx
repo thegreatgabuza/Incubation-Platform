@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Calendar, Badge, Modal, Button, Typography } from 'antd';
 import type { CalendarMode } from 'antd/es/calendar/generateCalendar';
-import type { Moment } from 'moment';
-import moment from 'moment';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 
@@ -28,7 +28,7 @@ interface FunderCalendarProps {
 }
 
 export const FunderCalendar: React.FC<FunderCalendarProps> = ({ events }) => {
-  const [selectedDate, setSelectedDate] = useState<Moment | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [dateEvents, setDateEvents] = useState<CalendarEvent[]>([]);
 
@@ -47,7 +47,7 @@ export const FunderCalendar: React.FC<FunderCalendarProps> = ({ events }) => {
   };
 
   // Handler for date cell rendering
-  const dateCellRender = (value: Moment) => {
+  const dateCellRender = (value: Dayjs) => {
     const dateStr = value.format('YYYY-MM-DD');
     const listData = events.filter(event => event.date.startsWith(dateStr));
     
@@ -67,7 +67,7 @@ export const FunderCalendar: React.FC<FunderCalendarProps> = ({ events }) => {
   };
 
   // Handler for month cell rendering
-  const monthCellRender = (value: Moment) => {
+  const monthCellRender = (value: Dayjs) => {
     const monthStart = value.format('YYYY-MM');
     const listData = events.filter(event => event.date.startsWith(monthStart));
     
@@ -87,7 +87,7 @@ export const FunderCalendar: React.FC<FunderCalendarProps> = ({ events }) => {
   };
 
   // Handler for date selection
-  const onSelect = (date: Moment) => {
+  const onSelect = (date: Dayjs) => {
     const dateStr = date.format('YYYY-MM-DD');
     const filteredEvents = events.filter(event => event.date.startsWith(dateStr));
     
@@ -97,7 +97,7 @@ export const FunderCalendar: React.FC<FunderCalendarProps> = ({ events }) => {
   };
 
   // Handler for calendar view change
-  const onPanelChange = (date: Moment, mode: CalendarMode) => {
+  const onPanelChange = (date: Dayjs, mode: CalendarMode) => {
     console.log(date.format('YYYY-MM-DD'), mode);
   };
 
